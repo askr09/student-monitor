@@ -1,9 +1,27 @@
-from flask import Flask, request, jsonify
+# Health check endpoint
+
+
+from flask import Flask, request, jsonify, send_from_directory
+from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
 from model import predict_student
 import mysql.connector
 import os
+import time
+
 
 app = Flask(__name__)
+from flask_cors import CORS
+CORS(app)
+
+@app.route('/')
+def home():
+    return send_from_directory('.', 'index.html')
+# Metrics
+REQUEST_COUNT = Counter('http_requests_total', 'Total HTTP Requests', ['method', 'endpoint', 'status'])
+PREDICTION_COUNT = Counter('ml_predictions_total', 'Total ML Predictions', ['model', 'class'])
+RESPONSE_TIME = Histogram('http_request_duration_seconds', 'HTTP Request Duration', ['endpoint'])
+ACTIVE_USERS = Gauge('active_users', 'Number of Active Users')
+ERROR_COUNT = Counter('http_errors_total', 'Total HTTP Errors', ['endpoint', 'status'])
 
 # Required fields matching your dataset columns
 REQUIRED_FIELDS = [
@@ -22,19 +40,37 @@ def get_db():
         database=os.getenv('DB_NAME', 'student_db')
     )
 
-@app.route('/health')
-def health():
-    return jsonify({'status': 'running', 'model': 'Student Risk Predictor v1.0'})
+
+# --- Monitoring Middleware ---
+@app.before_request
+def before_request():
+    request.start_time = time.time()
+    ACTIVE_USERS.inc()
+
+@app.after_request
+def after_request(response):
+    resp_time = time.time() - getattr(request, 'start_time', time.time())
+    RESPONSE_TIME.labels(request.path).observe(resp_time)
+    REQUEST_COUNT.labels(request.method, request.path, response.status_code).inc()
+    if response.status_code >= 400:
+        ERROR_COUNT.labels(request.path, response.status_code).inc()
+    ACTIVE_USERS.dec()
+    return response
 
 @app.route('/api/predict', methods=['POST'])
 def predict():
     data = request.get_json()
+    print('Received data:', data)
     # Validate all 14 fields are present
     for field in REQUIRED_FIELDS:
         if field not in data:
+            print(f'Missing field: {field}')
             return jsonify({'error': f'Missing field: {field}'}), 400
 
     result = predict_student(data)
+    print('Prediction result:', result)
+    # Prometheus ML prediction metric
+    PREDICTION_COUNT.labels('student_model', result['risk_label']).inc()
 
     # Save to MySQL
     try:
@@ -64,7 +100,8 @@ def predict():
     return jsonify({
         'risk_label':  result['risk_label'],
         'confidence':  result['confidence'],
-        'message':     'Prediction complete'
+        'message':     'Prediction complete',
+        'debug': result.get('error') if isinstance(result, dict) and 'error' in result else None
     })
 
 @app.route('/api/predictions')
@@ -78,6 +115,10 @@ def all_predictions():
         return jsonify(rows)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+@app.route('/metrics')
+def metrics():
+    return generate_latest(), 200, {'Content-Type': CONTENT_TYPE_LATEST}
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Monitoring and Risk Prediction System</title>
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-gradient: linear-gradient(135deg, #0ff0fc 0%, #7c3aed 100%);
+      --glass-bg: rgba(30, 32, 60, 0.7);
+      --glass-border: rgba(120, 120, 255, 0.2);
+      --neon-blue: #0ff0fc;
+      --neon-purple: #7c3aed;
+      --sidebar-width: 260px;
+      --sidebar-bg: rgba(20, 22, 40, 0.95);
+      --sidebar-border: rgba(120, 120, 255, 0.15);
+      --card-bg: rgba(40, 42, 70, 0.85);
+      --kpi-card-glow: 0 0 16px 2px #0ff0fc44, 0 0 32px 4px #7c3aed33;
+      --success: #00ff99;
+      --warning: #ffe066;
+      --danger: #ff3b6b;
+    }
+    html, body {
+      height: 100%;
+      background: linear-gradient(120deg, #181a2a 0%, #23244d 100%);
+      font-family: 'Roboto', 'Orbitron', Arial, sans-serif;
+      color: #e0e6f7;
+      min-height: 100vh;
+    }
+    body {
+      overflow-x: hidden;
+    }
+    .glass {
+      background: var(--glass-bg);
+      border: 1.5px solid var(--glass-border);
+      box-shadow: 0 8px 32px 0 #0ff0fc22;
+      backdrop-filter: blur(12px);
+      border-radius: 18px;
+    }
+    .sidebar {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: var(--sidebar-width);
+      background: var(--sidebar-bg);
+      border-right: 1.5px solid var(--sidebar-border);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      padding: 32px 0 0 0;
+      box-shadow: 0 0 32px 0 #0ff0fc11;
+    }
+    .sidebar .logo {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--neon-blue);
+      text-align: center;
+      margin-bottom: 36px;
+      text-shadow: 0 0 8px #0ff0fc99, 0 0 16px #7c3aed66;
+    }
+    .sidebar nav {
+      flex: 1;
+    }
+    .sidebar nav ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .sidebar nav ul li {
+      margin: 0 0 12px 0;
+    }
+    .sidebar nav ul li a {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: #e0e6f7;
+      text-decoration: none;
+      font-size: 1.08rem;
+      padding: 12px 32px;
+      border-radius: 12px 0 0 12px;
+      transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+    .sidebar nav ul li a.active, .sidebar nav ul li a:hover {
+      background: var(--primary-gradient);
+      color: #181a2a;
+      box-shadow: 0 0 16px 2px #0ff0fc44, 0 0 32px 4px #7c3aed33;
+    }
+    .sidebar .settings {
+      margin-top: auto;
+      padding: 24px 0 16px 0;
+      text-align: center;
+    }
+    .sidebar .settings a {
+      color: #b0b8e6;
+      font-size: 1.1rem;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .sidebar .settings a:hover {
+      color: var(--neon-blue);
+    }
+    .main-content {
+      margin-left: var(--sidebar-width);
+      padding: 32px 32px 0 32px;
+      min-height: 100vh;
+    }
+    .dashboard-header {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+    .dashboard-header .typing {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-fill-color: transparent;
+      letter-spacing: 2px;
+      text-shadow: 0 0 12px #0ff0fc99, 0 0 24px #7c3aed66;
+      min-height: 48px;
+    }
+    .dashboard-header .ai-badge {
+      background: var(--primary-gradient);
+      color: #181a2a;
+      font-weight: 700;
+      border-radius: 8px;
+      padding: 6px 18px;
+      font-size: 1.1rem;
+      box-shadow: 0 0 8px #0ff0fc66;
+      margin-left: 8px;
+    }
+    .kpi-cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+    .kpi-card {
+      flex: 1 1 220px;
+      min-width: 220px;
+      max-width: 320px;
+      background: var(--card-bg);
+      border-radius: 18px;
+      box-shadow: var(--kpi-card-glow);
+      padding: 28px 24px 20px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.18s, box-shadow 0.18s;
+      cursor: pointer;
+    }
+    .kpi-card:hover {
+      transform: translateY(-6px) scale(1.03);
+      box-shadow: 0 0 32px 8px #0ff0fc55, 0 0 64px 16px #7c3aed44;
+    }
+    .kpi-card .icon {
+      font-size: 2.2rem;
+      margin-bottom: 10px;
+      color: var(--neon-blue);
+      text-shadow: 0 0 8px #0ff0fc99;
+    }
+    .kpi-card .counter {
+      font-size: 2.1rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: #fff;
+      text-shadow: 0 0 8px #0ff0fc99, 0 0 16px #7c3aed66;
+    }
+    .kpi-card .label {
+      font-size: 1.1rem;
+      color: #b0b8e6;
+      font-weight: 500;
+    }
+    .kpi-card .status {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+    .kpi-card .status.success { color: var(--success); }
+    .kpi-card .status.warning { color: var(--warning); }
+    .kpi-card .status.danger { color: var(--danger); }
+    .kpi-card .glow {
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 120px; height: 120px;
+      background: radial-gradient(circle, #0ff0fc55 0%, #7c3aed22 80%, transparent 100%);
+      filter: blur(12px);
+      z-index: 0;
+    }
+    .prediction-form-section {
+      margin-bottom: 36px;
+    }
+    .prediction-form {
+      background: var(--glass-bg);
+      border: 1.5px solid var(--glass-border);
+      border-radius: 18px;
+      box-shadow: 0 0 24px #0ff0fc22;
+      padding: 32px 24px 24px 24px;
+      max-width: 700px;
+      margin: 0 auto 0 auto;
+      position: relative;
+    }
+    .prediction-form h4 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 18px;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-fill-color: transparent;
+      letter-spacing: 1px;
+    }
+    .form-label {
+      color: #b0b8e6;
+      font-weight: 500;
+    }
+    .form-control, .form-select {
+      background: rgba(30, 32, 60, 0.6);
+      border: 1.5px solid var(--glass-border);
+      color: #e0e6f7;
+      border-radius: 10px;
+      box-shadow: none;
+      transition: border 0.2s, box-shadow 0.2s;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: var(--neon-blue);
+      box-shadow: 0 0 8px #0ff0fc55;
+    }
+    .predict-btn {
+      background: var(--primary-gradient);
+      color: #181a2a;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 36px;
+      font-size: 1.15rem;
+      box-shadow: 0 0 16px #0ff0fc55, 0 0 32px #7c3aed44;
+      transition: transform 0.18s, box-shadow 0.18s, background 0.18s;
+      position: relative;
+      overflow: hidden;
+    }
+    .predict-btn:active {
+      transform: scale(0.97);
+    }
+    .predict-btn .spinner-border {
+      width: 1.5rem;
+      height: 1.5rem;
+      border-width: 3px;
+      color: #fff;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .result-section {
+      margin: 32px auto 0 auto;
+      max-width: 600px;
+      text-align: center;
+      display: none;
+    }
+    .result-card {
+      background: var(--glass-bg);
+      border: 1.5px solid var(--glass-border);
+      border-radius: 18px;
+      box-shadow: 0 0 24px #0ff0fc22;
+      padding: 32px 24px 24px 24px;
+      margin: 0 auto;
+      position: relative;
+      animation: fadeInUp 0.7s cubic-bezier(.23,1.01,.32,1) both;
+    }
+    .result-label {
+      font-size: 2.1rem;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+    .result-confidence {
+      font-size: 1.2rem;
+      color: #b0b8e6;
+      margin-bottom: 12px;
+    }
+    .result-success {
+      font-size: 2.5rem;
+      color: var(--success);
+      margin-bottom: 8px;
+      animation: popIn 0.7s cubic-bezier(.23,1.01,.32,1) both;
+    }
+    .result-card.low {
+      border-color: var(--success);
+      box-shadow: 0 0 24px #00ff9955;
+    }
+    .result-card.medium {
+      border-color: var(--warning);
+      box-shadow: 0 0 24px #ffe06655;
+    }
+    .result-card.high {
+      border-color: var(--danger);
+      box-shadow: 0 0 24px #ff3b6b55;
+    }
+    @keyframes fadeInUp {
+      0% { opacity: 0; transform: translateY(40px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.7); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .charts-section {
+      margin: 48px 0 0 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px;
+      justify-content: space-between;
+    }
+    .chart-card {
+      flex: 1 1 340px;
+      min-width: 320px;
+      max-width: 480px;
+      background: var(--glass-bg);
+      border: 1.5px solid var(--glass-border);
+      border-radius: 18px;
+      box-shadow: 0 0 24px #0ff0fc22;
+      padding: 24px 18px 18px 18px;
+      margin-bottom: 12px;
+    }
+    .chart-card h5 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-fill-color: transparent;
+    }
+    .monitoring-section {
+      margin: 48px 0 0 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+    }
+    .monitor-card {
+      flex: 1 1 220px;
+      min-width: 220px;
+      max-width: 320px;
+      background: var(--card-bg);
+      border-radius: 18px;
+      box-shadow: 0 0 16px 2px #0ff0fc44, 0 0 32px 4px #7c3aed33;
+      padding: 24px 20px 18px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.18s, box-shadow 0.18s;
+    }
+    .monitor-card .icon {
+      font-size: 2rem;
+      margin-bottom: 8px;
+      color: var(--neon-blue);
+      text-shadow: 0 0 8px #0ff0fc99;
+    }
+    .monitor-card .label {
+      font-size: 1.1rem;
+      color: #b0b8e6;
+      font-weight: 500;
+    }
+    .monitor-card .status {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+    .monitor-card .status.success { color: var(--success); }
+    .monitor-card .status.warning { color: var(--warning); }
+    .monitor-card .status.danger { color: var(--danger); }
+    .monitor-card .glow {
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 120px; height: 120px;
+      background: radial-gradient(circle, #0ff0fc55 0%, #7c3aed22 80%, transparent 100%);
+      filter: blur(12px);
+      z-index: 0;
+    }
+    .footer {
+      margin-top: 48px;
+      padding: 24px 0 16px 0;
+      text-align: center;
+      color: #b0b8e6;
+      font-size: 1.08rem;
+      letter-spacing: 1px;
+      background: transparent;
+    }
+    /* Glowing effect */
+    .glow-effect {
+      box-shadow: 0 0 16px 2px #0ff0fc44, 0 0 32px 4px #7c3aed33;
+      animation: glowPulse 2.2s infinite alternate;
+    }
+    @keyframes glowPulse {
+      0% { box-shadow: 0 0 16px 2px #0ff0fc44, 0 0 32px 4px #7c3aed33; }
+      100% { box-shadow: 0 0 32px 8px #0ff0fc99, 0 0 64px 16px #7c3aed77; }
+    }
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .charts-section, .monitoring-section {
+        flex-direction: column;
+        gap: 18px;
+      }
+    }
+    @media (max-width: 900px) {
+      .main-content {
+        padding: 18px 6px 0 6px;
+      }
+      .kpi-cards, .charts-section, .monitoring-section {
+        flex-direction: column;
+        gap: 16px;
+      }
+    }
+    @media (max-width: 700px) {
+      .sidebar {
+        width: 64px;
+        padding: 12px 0 0 0;
+      }
+      .sidebar .logo {
+        font-size: 1.1rem;
+        margin-bottom: 18px;
+      }
+      .sidebar nav ul li a {
+        padding: 10px 10px;
+        font-size: 0.98rem;
+        gap: 8px;
+        border-radius: 8px 0 0 8px;
+      }
+      .main-content {
+        margin-left: 64px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar glass">
+    <div class="logo">AI Student Monitor</div>
+    <nav>
+      <ul>
+        <li><a href="#dashboard" class="active"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
+        <li><a href="#analytics"><i class="fas fa-user-graduate"></i> Student Analytics</a></li>
+        <li><a href="#predictions"><i class="fas fa-brain"></i> Predictions</a></li>
+        <li><a href="#monitoring"><i class="fas fa-desktop"></i> Monitoring</a></li>
+        <li><a href="#grafana"><i class="fas fa-chart-line"></i> Grafana</a></li>
+        <li><a href="#prometheus"><i class="fas fa-broadcast-tower"></i> Prometheus</a></li>
+        <li><a href="#jenkins"><i class="fab fa-jenkins"></i> Jenkins</a></li>
+      </ul>
+    </nav>
+    <div class="settings">
+      <a href="#settings"><i class="fas fa-cog"></i> Settings</a>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header -->
+    <div class="dashboard-header">
+      <div class="typing" id="typing-header"></div>
+      <span class="ai-badge glow-effect"><i class="fas fa-robot"></i> AI Analytics</span>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-cards">
+      <div class="kpi-card glass glow-effect" id="kpi-total-students">
+        <div class="icon"><i class="fas fa-users"></i></div>
+        <div class="counter" id="counter-students">0</div>
+        <div class="label">Total Students</div>
+        <div class="glow"></div>
+      </div>
+      <div class="kpi-card glass glow-effect" id="kpi-total-predictions">
+        <div class="icon"><i class="fas fa-magic"></i></div>
+        <div class="counter" id="counter-predictions">0</div>
+        <div class="label">Total Predictions</div>
+        <div class="glow"></div>
+      </div>
+      <div class="kpi-card glass glow-effect" id="kpi-high-risk">
+        <div class="icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="counter" id="counter-high-risk">0</div>
+        <div class="label">High Risk Students</div>
+        <div class="glow"></div>
+      </div>
+      <div class="kpi-card glass glow-effect" id="kpi-api-status">
+        <div class="icon"><i class="fas fa-server"></i></div>
+        <div class="counter" id="counter-api-status">-</div>
+        <div class="label">API Status</div>
+        <div class="status" id="status-api">Checking...</div>
+        <div class="glow"></div>
+      </div>
+      <div class="kpi-card glass glow-effect" id="kpi-model-accuracy">
+        <div class="icon"><i class="fas fa-percentage"></i></div>
+        <div class="counter" id="counter-model-accuracy">0%</div>
+        <div class="label">Model Accuracy</div>
+        <div class="glow"></div>
+      </div>
+      <div class="kpi-card glass glow-effect" id="kpi-active-monitoring">
+        <div class="icon"><i class="fas fa-eye"></i></div>
+        <div class="counter" id="counter-active-monitoring">-</div>
+        <div class="label">Active Monitoring</div>
+        <div class="status" id="status-monitoring">Checking...</div>
+        <div class="glow"></div>
+      </div>
+    </div>
+
+    <!-- Prediction Form -->
+    <section class="prediction-form-section" id="predictions">
+      <form class="prediction-form glass" id="student-predict-form">
+        <h4><i class="fas fa-brain"></i> Student Risk Prediction</h4>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Age</label>
+            <input type="number" class="form-control" name="age" min="10" max="30" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Gender</label>
+            <select class="form-select" name="gender" required>
+              <option value="">Select</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Study Hours/Day</label>
+            <input type="number" class="form-control" name="study_hours_per_day" min="0" max="24" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Social Media Hours</label>
+            <input type="number" class="form-control" name="social_media_hours" min="0" max="24" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Netflix Hours</label>
+            <input type="number" class="form-control" name="netflix_hours" min="0" max="24" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Part Time Job</label>
+            <select class="form-select" name="part_time_job" required>
+              <option value="">Select</option>
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Attendance %</label>
+            <input type="number" class="form-control" name="attendance_percentage" min="0" max="100" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Sleep Hours</label>
+            <input type="number" class="form-control" name="sleep_hours" min="0" max="24" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Diet Quality</label>
+            <select class="form-select" name="diet_quality" required>
+              <option value="">Select</option>
+              <option value="Poor">Poor</option>
+              <option value="Average">Average</option>
+              <option value="Good">Good</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Exercise Frequency</label>
+            <select class="form-select" name="exercise_frequency" required>
+              <option value="">Select</option>
+              <option value="Never">Never</option>
+              <option value="Rarely">Rarely</option>
+              <option value="Sometimes">Sometimes</option>
+              <option value="Often">Often</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Parental Education Level</label>
+            <select class="form-select" name="parental_education_level" required>
+              <option value="">Select</option>
+              <option value="None">None</option>
+              <option value="High School">High School</option>
+              <option value="Bachelor">Bachelor</option>
+              <option value="Master">Master</option>
+              <option value="PhD">PhD</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Internet Quality</label>
+            <select class="form-select" name="internet_quality" required>
+              <option value="">Select</option>
+              <option value="Poor">Poor</option>
+              <option value="Average">Average</option>
+              <option value="Good">Good</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Mental Health Rating</label>
+            <select class="form-select" name="mental_health_rating" required>
+              <option value="">Select</option>
+              <option value="Poor">Poor</option>
+              <option value="Average">Average</option>
+              <option value="Good">Good</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Extracurricular Participation</label>
+            <select class="form-select" name="extracurricular_participation" required>
+              <option value="">Select</option>
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+        </div>
+        <div class="text-center mt-4">
+          <button type="submit" class="predict-btn glow-effect" id="predict-btn">
+            <span id="predict-btn-text">Predict Risk</span>
+            <span class="spinner-border spinner-border-sm d-none" id="predict-spinner"></span>
+          </button>
+        </div>
+      </form>
+      <div class="result-section" id="result-section">
+        <div class="result-card" id="result-card">
+          <div class="result-success" id="result-success"><i class="fas fa-check-circle"></i></div>
+          <div class="result-label" id="result-label">-</div>
+          <div class="result-confidence" id="result-confidence">-</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Charts Section -->
+    <section class="charts-section" id="analytics">
+      <div class="chart-card glass">
+        <h5><i class="fas fa-chart-pie"></i> Student Risk Distribution</h5>
+        <canvas id="riskPieChart" height="180"></canvas>
+      </div>
+      <div class="chart-card glass">
+        <h5><i class="fas fa-chart-line"></i> API Requests</h5>
+        <canvas id="apiLineChart" height="180"></canvas>
+      </div>
+      <div class="chart-card glass">
+        <h5><i class="fas fa-barcode"></i> Attendance Analytics</h5>
+        <canvas id="attendanceBarChart" height="180"></canvas>
+      </div>
+      <div class="chart-card glass">
+        <h5><i class="fas fa-chart-area"></i> Prediction Trends</h5>
+        <canvas id="predictionTrendsChart" height="180"></canvas>
+      </div>
+    </section>
+
+    <!-- Monitoring Section -->
+    <section class="monitoring-section" id="monitoring">
+      <div class="monitor-card glass" id="monitor-prometheus">
+        <div class="icon"><i class="fas fa-broadcast-tower"></i></div>
+        <div class="label">Prometheus Status</div>
+        <div class="status" id="status-prometheus">Checking...</div>
+        <div class="glow"></div>
+      </div>
+      <div class="monitor-card glass" id="monitor-grafana">
+        <div class="icon"><i class="fas fa-chart-line"></i></div>
+        <div class="label">Grafana Status</div>
+        <div class="status" id="status-grafana">Checking...</div>
+        <div class="glow"></div>
+      </div>
+      <div class="monitor-card glass" id="monitor-jenkins">
+        <div class="icon"><i class="fab fa-jenkins"></i></div>
+        <div class="label">Jenkins Pipeline Status</div>
+        <div class="status" id="status-jenkins">Checking...</div>
+        <div class="glow"></div>
+      </div>
+      <div class="monitor-card glass" id="monitor-docker">
+        <div class="icon"><i class="fab fa-docker"></i></div>
+        <div class="label">Docker Container Status</div>
+        <div class="status" id="status-docker">Checking...</div>
+        <div class="glow"></div>
+      </div>
+      <div class="monitor-card glass" id="monitor-api">
+        <div class="icon"><i class="fas fa-server"></i></div>
+        <div class="label">API Health</div>
+        <div class="status" id="status-api-health">Checking...</div>
+        <div class="glow"></div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      Powered by AI + DevOps Monitoring System
+    </footer>
+  </main>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- Font Awesome (already loaded above) -->
+  <script>
+  // Typing Animation
+  const typingHeader = document.getElementById('typing-header');
+  const typingTexts = [
+    'Student Monitoring & Risk Prediction System',
+    'AI-Powered Analytics Dashboard',
+    'Futuristic SaaS Platform',
+    'Real-Time Student Risk Insights',
+    'Enterprise-Grade Monitoring'
+  ];
+  let typingIndex = 0, charIndex = 0, isDeleting = false;
+  function typeHeader() {
+    const text = typingTexts[typingIndex];
+    if (!isDeleting) {
+      typingHeader.textContent = text.substring(0, charIndex + 1);
+      charIndex++;
+      if (charIndex === text.length) {
+        isDeleting = true;
+        setTimeout(typeHeader, 1200);
+        return;
+      }
+    } else {
+      typingHeader.textContent = text.substring(0, charIndex - 1);
+      charIndex--;
+      if (charIndex === 0) {
+        isDeleting = false;
+        typingIndex = (typingIndex + 1) % typingTexts.length;
+      }
+    }
+    setTimeout(typeHeader, isDeleting ? 32 : 64);
+  }
+  typeHeader();
+
+  // Animated Counters
+  function animateCounter(id, target, duration = 1200, suffix = '') {
+    const el = document.getElementById(id);
+    let start = 0;
+    const step = Math.ceil(target / (duration / 18));
+    function update() {
+      start += step;
+      if (start >= target) {
+        el.textContent = target + suffix;
+      } else {
+        el.textContent = start + suffix;
+        requestAnimationFrame(update);
+      }
+    }
+    update();
+  }
+
+  // Dummy Data for Demo (Replace with API calls)
+  const demoStats = {
+    students: 1200,
+    predictions: 3500,
+    highRisk: 87,
+    modelAccuracy: 94.2,
+    activeMonitoring: 'Active',
+    apiStatus: 'Online',
+  };
+
+  window.addEventListener('DOMContentLoaded', () => {
+    animateCounter('counter-students', demoStats.students);
+    animateCounter('counter-predictions', demoStats.predictions);
+    animateCounter('counter-high-risk', demoStats.highRisk);
+    animateCounter('counter-model-accuracy', demoStats.modelAccuracy, 1200, '%');
+    document.getElementById('counter-api-status').textContent = demoStats.apiStatus;
+    document.getElementById('counter-active-monitoring').textContent = demoStats.activeMonitoring;
+    document.getElementById('status-api').textContent = demoStats.apiStatus;
+    document.getElementById('status-monitoring').textContent = demoStats.activeMonitoring;
+  });
+
+  // Prediction Form Submission
+  const predictForm = document.getElementById('student-predict-form');
+  const predictBtn = document.getElementById('predict-btn');
+  const predictBtnText = document.getElementById('predict-btn-text');
+  const predictSpinner = document.getElementById('predict-spinner');
+  const resultSection = document.getElementById('result-section');
+  const resultCard = document.getElementById('result-card');
+  const resultLabel = document.getElementById('result-label');
+  const resultConfidence = document.getElementById('result-confidence');
+  const resultSuccess = document.getElementById('result-success');
+
+  predictForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    predictBtn.disabled = true;
+    predictBtnText.textContent = 'Predicting...';
+    predictSpinner.classList.remove('d-none');
+    resultSection.style.display = 'none';
+
+    // Collect form data
+    const formData = new FormData(predictForm);
+    const data = {};
+    formData.forEach((v, k) => data[k] = v);
+
+    // API call
+    fetch('http://127.0.0.1:5000/api/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(res => {
+      // Example response: { risk: 'High', confidence: 0.87 }
+      let risk = res.risk || 'Unknown';
+      let confidence = res.confidence ? (res.confidence * 100).toFixed(1) : '-';
+      resultLabel.textContent = risk + ' Risk';
+      resultConfidence.textContent = 'Confidence: ' + confidence + '%';
+      resultSuccess.innerHTML = '<i class="fas fa-check-circle"></i>';
+      resultCard.className = 'result-card';
+      if (risk.toLowerCase() === 'low') {
+        resultCard.classList.add('low');
+        resultSuccess.style.color = 'var(--success)';
+      } else if (risk.toLowerCase() === 'medium') {
+        resultCard.classList.add('medium');
+        resultSuccess.style.color = 'var(--warning)';
+      } else if (risk.toLowerCase() === 'high') {
+        resultCard.classList.add('high');
+        resultSuccess.style.color = 'var(--danger)';
+      } else {
+        resultSuccess.style.color = '#fff';
+      }
+      resultSection.style.display = 'block';
+    })
+    .catch(() => {
+      resultLabel.textContent = 'Prediction Failed';
+      resultConfidence.textContent = '';
+      resultSuccess.innerHTML = '<i class="fas fa-times-circle"></i>';
+      resultSuccess.style.color = 'var(--danger)';
+      resultCard.className = 'result-card high';
+      resultSection.style.display = 'block';
+    })
+    .finally(() => {
+      predictBtn.disabled = false;
+      predictBtnText.textContent = 'Predict Risk';
+      predictSpinner.classList.add('d-none');
+    });
+  });
+
+  // Chart.js Demo Data (Replace with real API data)
+  const riskPieChart = new Chart(document.getElementById('riskPieChart').getContext('2d'), {
+    type: 'pie',
+    data: {
+      labels: ['Low', 'Medium', 'High'],
+      datasets: [{
+        data: [900, 213, 87],
+        backgroundColor: [
+          'rgba(0,255,153,0.8)',
+          'rgba(255,224,102,0.8)',
+          'rgba(255,59,107,0.8)'
+        ],
+        borderWidth: 2,
+        borderColor: '#23244d',
+      }]
+    },
+    options: {
+      plugins: {
+        legend: {
+          labels: { color: '#e0e6f7', font: { size: 15 } }
+        }
+      }
+    }
+  });
+  const apiLineChart = new Chart(document.getElementById('apiLineChart').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      datasets: [{
+        label: 'API Requests',
+        data: [120, 150, 180, 210, 170, 200, 250],
+        borderColor: 'rgba(124,58,237,0.9)',
+        backgroundColor: 'rgba(124,58,237,0.2)',
+        tension: 0.4,
+        pointBackgroundColor: 'rgba(0,255,252,0.9)',
+        pointRadius: 5,
+        fill: true,
+      }]
+    },
+    options: {
+      plugins: {
+        legend: { labels: { color: '#e0e6f7' } }
+      },
+      scales: {
+        x: { ticks: { color: '#b0b8e6' } },
+        y: { ticks: { color: '#b0b8e6' } }
+      }
+    }
+  });
+  const attendanceBarChart = new Chart(document.getElementById('attendanceBarChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: ['A', 'B', 'C', 'D', 'E', 'F'],
+      datasets: [{
+        label: 'Attendance %',
+        data: [92, 88, 95, 80, 85, 90],
+        backgroundColor: 'rgba(0,255,252,0.7)',
+        borderColor: 'rgba(124,58,237,0.9)',
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      plugins: {
+        legend: { labels: { color: '#e0e6f7' } }
+      },
+      scales: {
+        x: { ticks: { color: '#b0b8e6' } },
+        y: { ticks: { color: '#b0b8e6' } }
+      }
+    }
+  });
+  const predictionTrendsChart = new Chart(document.getElementById('predictionTrendsChart').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+      datasets: [{
+        label: 'Predictions',
+        data: [600, 800, 950, 1150],
+        borderColor: 'rgba(0,255,252,0.9)',
+        backgroundColor: 'rgba(124,58,237,0.2)',
+        tension: 0.4,
+        pointBackgroundColor: 'rgba(124,58,237,0.9)',
+        pointRadius: 5,
+        fill: true,
+      }]
+    },
+    options: {
+      plugins: {
+        legend: { labels: { color: '#e0e6f7' } }
+      },
+      scales: {
+        x: { ticks: { color: '#b0b8e6' } },
+        y: { ticks: { color: '#b0b8e6' } }
+      }
+    }
+  });
+
+  // Monitoring Section Demo (Replace with real status checks)
+  function setStatus(id, status) {
+    const el = document.getElementById(id);
+    el.textContent = status.label;
+    el.className = 'status ' + status.type;
+  }
+  window.addEventListener('DOMContentLoaded', () => {
+    setStatus('status-prometheus', { label: 'Online', type: 'success' });
+    setStatus('status-grafana', { label: 'Online', type: 'success' });
+    setStatus('status-jenkins', { label: 'Running', type: 'success' });
+    setStatus('status-docker', { label: 'Healthy', type: 'success' });
+    setStatus('status-api-health', { label: 'Healthy', type: 'success' });
+  });
+  </script>
+</body>
+</html>

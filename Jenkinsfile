@@ -9,7 +9,7 @@ pipeline {
         }
         stage('Build') {
             steps {
-                sh 'pip install -r app/requirements.txt'
+                sh 'pip install --break-system-packages -r app/requirements.txt'
                 sh 'pytest app/'
             }
         }

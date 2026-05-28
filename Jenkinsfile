@@ -11,7 +11,7 @@ pipeline {
             steps {
                 sh 'pip install --break-system-packages --only-binary=:all: -r app/requirements.txt'
 
-                sh 'pytest app/'
+                sh 'python3 -m pytest app/'
             }
         }
         stage('Docker Build') {
